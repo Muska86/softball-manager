@@ -180,7 +180,7 @@ export default function App() {
             <>
               {/* Plan title bar */}
               <div className="flex items-baseline justify-between mb-6 gap-2">
-                <div>
+                <div className="text-center lg:text-left">
                   <h2 className="text-xl font-bold text-white">{plan.title}</h2>
                   {plan.date && (
                     <p className="text-sm text-gray-400 mt-0.5">
