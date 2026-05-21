@@ -134,13 +134,12 @@ export default function ChatPanel({ isOpen, onClose, plan, passcode, onPlanUpdat
       {/* Panel */}
       <div
         className={`
-          fixed bottom-0 left-0 right-0 z-50
-          lg:fixed lg:bottom-4 lg:right-4 lg:left-auto lg:w-96
-          bg-gray-900 border border-gray-800 rounded-t-2xl lg:rounded-2xl shadow-2xl
+          fixed inset-x-0 top-14 bottom-0 z-50
+          lg:inset-auto lg:top-auto lg:bottom-4 lg:right-4 lg:w-96 lg:max-h-[75vh]
+          bg-gray-900 border border-gray-800 shadow-2xl lg:rounded-2xl
           flex flex-col transition-all duration-300
           ${isOpen ? 'translate-y-0 opacity-100' : 'translate-y-full lg:translate-y-8 opacity-0 pointer-events-none'}
         `}
-        style={{ maxHeight: '75vh' }}
       >
         {/* Panel header */}
         <div className="flex items-center justify-between px-4 py-3.5 border-b border-gray-800 shrink-0">
@@ -222,7 +221,7 @@ export default function ChatPanel({ isOpen, onClose, plan, passcode, onPlanUpdat
 
         {/* Input */}
         {!isReadOnly && (
-          <form onSubmit={handleSubmit} className="flex gap-2 p-3 border-t border-gray-800 shrink-0 items-end">
+          <form onSubmit={handleSubmit} className="flex gap-2 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] border-t border-gray-800 shrink-0 items-end">
             <textarea
               ref={textareaRef}
               value={input}
