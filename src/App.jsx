@@ -161,7 +161,7 @@ export default function App() {
         />
 
         {/* Main content */}
-        <main className="flex-1 overflow-y-auto p-4 lg:p-6">
+        <main className="flex-1 overflow-y-auto p-4 pb-10 lg:p-6 lg:pb-10">
           {!plan ? (
             <div className="flex flex-col items-center justify-center h-full text-gray-600 gap-4">
               <span className="text-5xl">⚾</span>
