@@ -206,16 +206,28 @@ async function handleChat(req, res) {
     return json(res, 500, { error: 'CLAUDE_API_KEY or ANTHROPIC_API_KEY is not set in .env.local' })
   }
 
-  // Include roster context so Claude can use it when building new plans
+  // Include roster + preferences context so Claude can use it when building new plans
   const db = await readDB()
   const roster = db.roster ?? []
+  const prefs = db.preferences ?? {}
+
   const rosterContext = roster.length > 0
     ? `\n\nTeam roster (use these players for new plans): ${roster.join(', ')}`
     : ''
 
+  const prefLines = roster
+    .map((name) => {
+      const disliked = prefs[name]?.dislikedPositions ?? []
+      return disliked.length > 0 ? `- ${name}: avoid ${disliked.join(', ')}` : null
+    })
+    .filter(Boolean)
+  const prefsContext = prefLines.length > 0
+    ? `\n\nPlayer position preferences (avoid these assignments where possible):\n${prefLines.join('\n')}`
+    : ''
+
   const userContent = currentPlan
-    ? `Current game plan:\n${JSON.stringify(currentPlan, null, 2)}${rosterContext}\n\nCoach request: ${message}`
-    : `No current plan exists yet.${rosterContext}\n\nCoach request: ${message}`
+    ? `Current game plan:\n${JSON.stringify(currentPlan, null, 2)}${rosterContext}${prefsContext}\n\nCoach request: ${message}`
+    : `No current plan exists yet.${rosterContext}${prefsContext}\n\nCoach request: ${message}`
 
   try {
     const response = await anthropic.messages.create({
@@ -257,7 +269,7 @@ async function handleChat(req, res) {
 async function handleRoster(req, res) {
   if (req.method === 'GET') {
     const db = await readDB()
-    return json(res, 200, { roster: db.roster ?? [] })
+    return json(res, 200, { roster: db.roster ?? [], preferences: db.preferences ?? {} })
   }
 
   if (req.method === 'POST') {
@@ -271,6 +283,7 @@ async function handleRoster(req, res) {
     if (!Array.isArray(body.roster)) return json(res, 400, { error: 'roster must be an array' })
     const db = await readDB()
     db.roster = body.roster
+    if (body.preferences !== undefined) db.preferences = body.preferences
     await writeDB(db)
     return json(res, 200, { ok: true })
   }

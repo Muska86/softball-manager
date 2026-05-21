@@ -10,10 +10,10 @@ export default async function handler(req, context) {
   if (req.method === 'GET') {
     try {
       const raw = await store.get('roster', { type: 'text' })
-      return Response.json(raw ? JSON.parse(raw) : { roster: [] })
+      return Response.json(raw ? JSON.parse(raw) : { roster: [], preferences: {} })
     } catch (err) {
       console.error('roster GET error:', err)
-      return Response.json({ roster: [] }, { status: 500 })
+      return Response.json({ roster: [], preferences: {} }, { status: 500 })
     }
   }
 
@@ -31,7 +31,12 @@ export default async function handler(req, context) {
       return Response.json({ error: 'roster must be an array' }, { status: 400 })
     }
     try {
-      await store.setJSON('roster', { roster: body.roster })
+      const existing = await store.get('roster', { type: 'text' }).catch(() => null)
+      const current = existing ? JSON.parse(existing) : {}
+      await store.setJSON('roster', {
+        roster: body.roster,
+        preferences: body.preferences ?? current.preferences ?? {},
+      })
       return Response.json({ ok: true })
     } catch (err) {
       console.error('roster POST error:', err)

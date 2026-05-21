@@ -79,17 +79,30 @@ export default async function handler(req, context) {
     return Response.json({ error: 'Missing message' }, { status: 400 })
   }
 
-  // Pull roster from Blobs to give Claude team context for new plans
+  // Pull roster + preferences from Blobs to give Claude team context
   const store = getStore({ name: 'softball', consistency: 'strong' })
   const rosterRaw = await store.get('roster', { type: 'text' }).catch(() => null)
-  const roster = rosterRaw ? (JSON.parse(rosterRaw).roster ?? []) : []
+  const rosterData = rosterRaw ? JSON.parse(rosterRaw) : {}
+  const roster = rosterData.roster ?? []
+  const prefs = rosterData.preferences ?? {}
+
   const rosterContext = roster.length > 0
     ? `\n\nTeam roster (use these players for new plans): ${roster.join(', ')}`
     : ''
 
+  const prefLines = roster
+    .map((name) => {
+      const disliked = prefs[name]?.dislikedPositions ?? []
+      return disliked.length > 0 ? `- ${name}: avoid ${disliked.join(', ')}` : null
+    })
+    .filter(Boolean)
+  const prefsContext = prefLines.length > 0
+    ? `\n\nPlayer position preferences (avoid these assignments where possible):\n${prefLines.join('\n')}`
+    : ''
+
   const userContent = currentPlan
-    ? `Current game plan:\n${JSON.stringify(currentPlan, null, 2)}${rosterContext}\n\nCoach request: ${message}`
-    : `No current plan exists yet.${rosterContext}\n\nCoach request: ${message}`
+    ? `Current game plan:\n${JSON.stringify(currentPlan, null, 2)}${rosterContext}${prefsContext}\n\nCoach request: ${message}`
+    : `No current plan exists yet.${rosterContext}${prefsContext}\n\nCoach request: ${message}`
 
   try {
     const response = await client.messages.create({

@@ -21,6 +21,7 @@ export default function App() {
   const [newPlanMode, setNewPlanMode] = useState(false)
   const [rosterOpen, setRosterOpen] = useState(false)
   const [roster, setRoster] = useState([])
+  const [preferences, setPreferences] = useState({})
   const [toast, setToast] = useState(null)
   const versionRef = useRef(0)
 
@@ -69,6 +70,7 @@ export default function App() {
       if (res.ok) {
         const data = await res.json()
         setRoster(data.roster ?? [])
+        setPreferences(data.preferences ?? {})
       }
     } catch { /* non-fatal */ }
   }, [])
@@ -228,8 +230,9 @@ export default function App() {
         isOpen={rosterOpen}
         onClose={() => setRosterOpen(false)}
         roster={roster}
+        preferences={preferences}
         passcode={passcode}
-        onRosterUpdate={setRoster}
+        onRosterUpdate={(r, p) => { setRoster(r); if (p !== undefined) setPreferences(p) }}
       />
 
       {/* Toast */}
