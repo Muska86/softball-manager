@@ -139,7 +139,7 @@ export default function App() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-gray-950 overflow-hidden">
+    <div className="flex flex-col h-dvh bg-gray-950 overflow-hidden">
       <TopHeader
         liveStatus={isReadOnly ? 'readonly' : liveStatus}
         onMenuToggle={() => setSidebarOpen((o) => !o)}
@@ -161,7 +161,7 @@ export default function App() {
         />
 
         {/* Main content */}
-        <main className="flex-1 overflow-y-auto p-4 pb-10 lg:p-6 lg:pb-10">
+        <main className="flex-1 overflow-y-auto overscroll-none p-4 pb-10 lg:p-6 lg:pb-10">
           {!plan ? (
             <div className="flex flex-col items-center justify-center h-full text-gray-600 gap-4">
               <span className="text-5xl">⚾</span>
