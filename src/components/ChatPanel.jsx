@@ -9,6 +9,7 @@ export default function ChatPanel({ isOpen, onClose, plan, passcode, onPlanUpdat
   const [loading, setLoading] = useState(false)
   const bottomRef = useRef(null)
   const textareaRef = useRef(null)
+  const panelRef = useRef(null)
   const initializedRef = useRef(false)
   const abortRef = useRef(null)
 
@@ -21,6 +22,39 @@ export default function ChatPanel({ isOpen, onClose, plan, passcode, onPlanUpdat
   useEffect(() => {
     if (isOpen) {
       setTimeout(() => textareaRef.current?.focus(), 150)
+    }
+  }, [isOpen])
+
+  // Lock background scroll on mobile when panel is open
+  useEffect(() => {
+    const isMobile = window.matchMedia('(max-width: 1023px)').matches
+    if (!isMobile) return
+    document.body.style.overflow = isOpen ? 'hidden' : ''
+    return () => { document.body.style.overflow = '' }
+  }, [isOpen])
+
+  // Resize panel to match visual viewport so keyboard doesn't cover the input
+  useEffect(() => {
+    const isMobile = window.matchMedia('(max-width: 1023px)').matches
+    if (!isOpen || !isMobile || !window.visualViewport) return
+
+    function update() {
+      if (!panelRef.current) return
+      panelRef.current.style.top = `${window.visualViewport.offsetTop}px`
+      panelRef.current.style.height = `${window.visualViewport.height}px`
+    }
+
+    window.visualViewport.addEventListener('resize', update)
+    window.visualViewport.addEventListener('scroll', update)
+    update()
+
+    return () => {
+      window.visualViewport.removeEventListener('resize', update)
+      window.visualViewport.removeEventListener('scroll', update)
+      if (panelRef.current) {
+        panelRef.current.style.top = ''
+        panelRef.current.style.height = ''
+      }
     }
   }, [isOpen])
 
@@ -133,6 +167,7 @@ export default function ChatPanel({ isOpen, onClose, plan, passcode, onPlanUpdat
 
       {/* Panel — right drawer on mobile, bottom-right popup on desktop */}
       <div
+        ref={panelRef}
         className={`
           fixed top-0 right-0 bottom-0 z-50 w-full sm:w-96
           lg:inset-auto lg:bottom-4 lg:right-4 lg:top-auto lg:w-96 lg:max-h-[75vh] lg:rounded-2xl
