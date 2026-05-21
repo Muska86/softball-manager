@@ -7,6 +7,7 @@ import InningCard from './components/InningCard.jsx'
 import PositionHistoryCard from './components/PositionHistoryCard.jsx'
 import ChatPanel from './components/ChatPanel.jsx'
 import RosterPanel from './components/RosterPanel.jsx'
+import ScoreboardCard from './components/ScoreboardCard.jsx'
 const POLL_INTERVAL = 15_000
 
 export default function App() {
@@ -203,6 +204,7 @@ export default function App() {
                   <BattingOrderCard plan={plan} />
                   <InningCard plan={plan} />
                 </div>
+                <ScoreboardCard plan={plan} />
                 <PositionHistoryCard plan={plan} />
               </div>
             </>
