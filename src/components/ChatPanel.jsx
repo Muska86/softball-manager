@@ -123,22 +123,24 @@ export default function ChatPanel({ isOpen, onClose, plan, passcode, onPlanUpdat
 
   return (
     <>
-      {/* Backdrop on mobile */}
+      {/* Backdrop */}
       {isOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/40 lg:hidden"
+          className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
           onClick={onClose}
         />
       )}
 
-      {/* Panel */}
+      {/* Panel — right drawer on mobile, bottom-right popup on desktop */}
       <div
         className={`
-          fixed inset-x-0 top-14 bottom-0 z-50
-          lg:inset-auto lg:top-auto lg:bottom-4 lg:right-4 lg:w-96 lg:max-h-[75vh]
-          bg-gray-900 border border-gray-800 shadow-2xl lg:rounded-2xl
-          flex flex-col transition-all duration-300
-          ${isOpen ? 'translate-y-0 opacity-100' : 'translate-y-full lg:translate-y-8 opacity-0 pointer-events-none'}
+          fixed top-0 right-0 bottom-0 z-50 w-full sm:w-96
+          lg:inset-auto lg:bottom-4 lg:right-4 lg:top-auto lg:w-96 lg:max-h-[75vh] lg:rounded-2xl
+          bg-gray-900 border-l border-gray-800 lg:border shadow-2xl
+          flex flex-col transition-transform duration-300
+          ${isOpen
+            ? 'translate-x-0 lg:translate-x-0 lg:translate-y-0 opacity-100'
+            : 'translate-x-full lg:translate-x-0 lg:translate-y-8 opacity-0 pointer-events-none'}
         `}
       >
         {/* Panel header */}
@@ -221,7 +223,7 @@ export default function ChatPanel({ isOpen, onClose, plan, passcode, onPlanUpdat
 
         {/* Input */}
         {!isReadOnly && (
-          <form onSubmit={handleSubmit} className="flex gap-2 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] border-t border-gray-800 shrink-0 items-end">
+          <form onSubmit={handleSubmit} className="flex gap-2 p-3 border-t border-gray-800 shrink-0 items-end" style={{ paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom, 1.5rem))' }}>
             <textarea
               ref={textareaRef}
               value={input}
