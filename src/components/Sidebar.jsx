@@ -64,7 +64,7 @@ export default function Sidebar({ plans, activePlanId, onSelectPlan, onNewPlan, 
           })}
         </nav>
 
-        <div className="p-3 border-t border-gray-800 flex flex-col gap-2">
+        <div className="p-3 pb-16 border-t border-gray-800 flex flex-col gap-2 lg:pb-3">
           <button
             onClick={() => { onNewPlan(); onClose() }}
             className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-brand-600 hover:bg-brand-500 text-white text-sm font-semibold transition"
