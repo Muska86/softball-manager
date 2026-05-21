@@ -1,0 +1,197 @@
+import { useState, useEffect, useRef } from 'react'
+
+const NEW_PLAN_PROMPT = "I'd like to create a new game plan. Please ask me for the details you need (game number, date, player roster, lead-off batter)."
+
+export default function ChatPanel({ isOpen, onClose, plan, passcode, onPlanUpdate, newPlanMode, onNewPlanModeEnd }) {
+  const [messages, setMessages] = useState([])
+  const [input, setInput] = useState('')
+  const [loading, setLoading] = useState(false)
+  const bottomRef = useRef(null)
+  const inputRef = useRef(null)
+  const initializedRef = useRef(false)
+
+  // Auto-scroll to bottom on new messages
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages])
+
+  // Focus input when panel opens
+  useEffect(() => {
+    if (isOpen) {
+      setTimeout(() => inputRef.current?.focus(), 150)
+    }
+  }, [isOpen])
+
+  // Seed new-plan prompt when entering new plan mode
+  useEffect(() => {
+    if (isOpen && newPlanMode && !initializedRef.current) {
+      initializedRef.current = true
+      sendMessage(NEW_PLAN_PROMPT, true)
+    }
+    if (!isOpen) {
+      initializedRef.current = false
+    }
+  }, [isOpen, newPlanMode])
+
+  async function sendMessage(text, silent = false) {
+    const userMsg = { role: 'user', content: text }
+    if (!silent) {
+      setMessages((prev) => [...prev, userMsg])
+    }
+    setInput('')
+    setLoading(true)
+
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Passcode': passcode,
+        },
+        body: JSON.stringify({
+          message: text,
+          currentPlan: plan,
+        }),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        setMessages((prev) => [
+          ...prev,
+          { role: 'assistant', content: data.error || 'Something went wrong. Please try again.', error: true },
+        ])
+        return
+      }
+
+      const assistantMsg = { role: 'assistant', content: data.message }
+      setMessages((prev) => [...prev, assistantMsg])
+
+      if (data.updatedPlan) {
+        onPlanUpdate(data.updatedPlan)
+        onNewPlanModeEnd?.()
+      }
+    } catch {
+      setMessages((prev) => [
+        ...prev,
+        { role: 'assistant', content: 'Network error. Please try again.', error: true },
+      ])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  function handleSubmit(e) {
+    e.preventDefault()
+    const text = input.trim()
+    if (!text || loading) return
+    sendMessage(text)
+  }
+
+  const isReadOnly = !plan && !newPlanMode
+
+  return (
+    <>
+      {/* Backdrop on mobile */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/40 lg:hidden"
+          onClick={onClose}
+        />
+      )}
+
+      {/* Panel */}
+      <div
+        className={`
+          fixed bottom-0 left-0 right-0 z-50
+          lg:fixed lg:bottom-4 lg:right-4 lg:left-auto lg:w-96
+          bg-gray-900 border border-gray-800 rounded-t-2xl lg:rounded-2xl shadow-2xl
+          flex flex-col transition-all duration-300
+          ${isOpen ? 'translate-y-0 opacity-100' : 'translate-y-full lg:translate-y-8 opacity-0 pointer-events-none'}
+        `}
+        style={{ maxHeight: '75vh' }}
+      >
+        {/* Panel header */}
+        <div className="flex items-center justify-between px-4 py-3.5 border-b border-gray-800 shrink-0">
+          <div className="flex items-center gap-2">
+            <span className="w-7 h-7 rounded-full bg-brand-700 flex items-center justify-center text-sm">⚾</span>
+            <span className="font-semibold text-white text-sm">Claude — Game Assistant</span>
+          </div>
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-300 transition">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Messages */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-thin">
+          {messages.length === 0 && !loading && (
+            <div className="text-center text-gray-500 text-sm py-8">
+              {isReadOnly
+                ? 'Viewing a past plan. Chat is only available for the live plan.'
+                : newPlanMode
+                ? 'Starting new plan…'
+                : 'Ask Claude to make changes, check rules, or create a new game plan.'}
+            </div>
+          )}
+
+          {messages.map((msg, i) => (
+            <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+              <div
+                className={`
+                  max-w-[85%] px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed
+                  ${msg.role === 'user'
+                    ? 'bg-brand-700 text-white rounded-br-sm'
+                    : msg.error
+                    ? 'bg-red-900/40 border border-red-800 text-red-300 rounded-bl-sm'
+                    : 'bg-gray-800 text-gray-200 rounded-bl-sm'
+                  }
+                `}
+              >
+                {msg.content}
+              </div>
+            </div>
+          ))}
+
+          {loading && (
+            <div className="flex justify-start">
+              <div className="bg-gray-800 rounded-2xl rounded-bl-sm px-4 py-3 flex gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-gray-500 animate-bounce" style={{ animationDelay: '0ms' }} />
+                <span className="w-1.5 h-1.5 rounded-full bg-gray-500 animate-bounce" style={{ animationDelay: '150ms' }} />
+                <span className="w-1.5 h-1.5 rounded-full bg-gray-500 animate-bounce" style={{ animationDelay: '300ms' }} />
+              </div>
+            </div>
+          )}
+
+          <div ref={bottomRef} />
+        </div>
+
+        {/* Input */}
+        {!isReadOnly && (
+          <form onSubmit={handleSubmit} className="flex gap-2 p-3 border-t border-gray-800 shrink-0">
+            <input
+              ref={inputRef}
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder={newPlanMode ? 'Describe your team…' : 'Ask Claude something…'}
+              disabled={loading}
+              className="flex-1 px-3.5 py-2.5 rounded-xl bg-gray-800 border border-gray-700 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 disabled:opacity-50 transition"
+            />
+            <button
+              type="submit"
+              disabled={loading || !input.trim()}
+              className="px-3.5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-500 disabled:opacity-40 disabled:cursor-not-allowed text-white transition"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+              </svg>
+            </button>
+          </form>
+        )}
+      </div>
+    </>
+  )
+}
