@@ -76,7 +76,7 @@ When creating a new plan, generate a complete plan with all innings populated (t
 
 // ── Anthropic client ─────────────────────────────────────────────────────────
 
-const anthropic = new Anthropic({ apiKey: process.env.CLAUDE_API_KEY })
+const anthropic = new Anthropic({ apiKey: process.env.CLAUDE_API_KEY || process.env.ANTHROPIC_API_KEY })
 
 // ── DB helpers ───────────────────────────────────────────────────────────────
 
@@ -202,13 +202,20 @@ async function handleChat(req, res) {
   const { message, currentPlan } = body
   if (!message) return json(res, 400, { error: 'Missing message' })
 
-  if (!process.env.CLAUDE_API_KEY) {
-    return json(res, 500, { error: 'CLAUDE_API_KEY is not set in .env.local' })
+  if (!process.env.CLAUDE_API_KEY && !process.env.ANTHROPIC_API_KEY) {
+    return json(res, 500, { error: 'CLAUDE_API_KEY or ANTHROPIC_API_KEY is not set in .env.local' })
   }
 
+  // Include roster context so Claude can use it when building new plans
+  const db = await readDB()
+  const roster = db.roster ?? []
+  const rosterContext = roster.length > 0
+    ? `\n\nTeam roster (use these players for new plans): ${roster.join(', ')}`
+    : ''
+
   const userContent = currentPlan
-    ? `Current game plan:\n${JSON.stringify(currentPlan, null, 2)}\n\nCoach request: ${message}`
-    : `No current plan exists yet.\n\nCoach request: ${message}`
+    ? `Current game plan:\n${JSON.stringify(currentPlan, null, 2)}${rosterContext}\n\nCoach request: ${message}`
+    : `No current plan exists yet.${rosterContext}\n\nCoach request: ${message}`
 
   try {
     const response = await anthropic.messages.create({
@@ -247,6 +254,30 @@ async function handleChat(req, res) {
   }
 }
 
+async function handleRoster(req, res) {
+  if (req.method === 'GET') {
+    const db = await readDB()
+    return json(res, 200, { roster: db.roster ?? [] })
+  }
+
+  if (req.method === 'POST') {
+    if (!checkPasscode(req)) return json(res, 401, { error: 'Invalid passcode' })
+    let body
+    try {
+      body = await readBody(req)
+    } catch {
+      return json(res, 400, { error: 'Invalid JSON' })
+    }
+    if (!Array.isArray(body.roster)) return json(res, 400, { error: 'roster must be an array' })
+    const db = await readDB()
+    db.roster = body.roster
+    await writeDB(db)
+    return json(res, 200, { ok: true })
+  }
+
+  json(res, 405, { error: 'Method not allowed' })
+}
+
 // ── Server ───────────────────────────────────────────────────────────────────
 
 const server = http.createServer(async (req, res) => {
@@ -264,6 +295,7 @@ const server = http.createServer(async (req, res) => {
     if (pathname === '/api/plans')   return await handlePlans(req, res)
     if (pathname === '/api/version') return await handleVersion(req, res)
     if (pathname === '/api/chat')    return await handleChat(req, res)
+    if (pathname === '/api/roster')  return await handleRoster(req, res)
 
     res.writeHead(404)
     res.end('Not found')
@@ -276,7 +308,7 @@ const server = http.createServer(async (req, res) => {
 server.listen(PORT, () => {
   console.log(`  \x1b[36m[api]\x1b[0m Local API ready at \x1b[1mhttp://localhost:${PORT}\x1b[0m`)
   console.log(`  \x1b[36m[api]\x1b[0m Database: ${DB_PATH}`)
-  if (!process.env.CLAUDE_API_KEY) {
-    console.warn(`  \x1b[33m[api]\x1b[0m WARNING: CLAUDE_API_KEY not set — /api/chat will return an error`)
+  if (!process.env.CLAUDE_API_KEY && !process.env.ANTHROPIC_API_KEY) {
+    console.warn(`  \x1b[33m[api]\x1b[0m WARNING: No API key set — /api/chat will return an error`)
   }
 })

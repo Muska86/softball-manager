@@ -4,7 +4,9 @@ import TopHeader from './components/TopHeader.jsx'
 import Sidebar from './components/Sidebar.jsx'
 import BattingOrderCard from './components/BattingOrderCard.jsx'
 import InningCard from './components/InningCard.jsx'
+import PositionHistoryCard from './components/PositionHistoryCard.jsx'
 import ChatPanel from './components/ChatPanel.jsx'
+import RosterPanel from './components/RosterPanel.jsx'
 const POLL_INTERVAL = 15_000
 
 export default function App() {
@@ -16,6 +18,8 @@ export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [chatOpen, setChatOpen] = useState(false)
   const [newPlanMode, setNewPlanMode] = useState(false)
+  const [rosterOpen, setRosterOpen] = useState(false)
+  const [roster, setRoster] = useState([])
   const [toast, setToast] = useState(null)
   const versionRef = useRef(0)
 
@@ -57,12 +61,24 @@ export default function App() {
     return null
   }, [])
 
+  // Fetch roster
+  const fetchRoster = useCallback(async () => {
+    try {
+      const res = await fetch('/api/roster')
+      if (res.ok) {
+        const data = await res.json()
+        setRoster(data.roster ?? [])
+      }
+    } catch { /* non-fatal */ }
+  }, [])
+
   // Initial load
   useEffect(() => {
     if (!passcode) return
     fetchPlansList()
     fetchPlan()
-  }, [passcode, fetchPlan])
+    fetchRoster()
+  }, [passcode, fetchPlan, fetchRoster])
 
   // Polling — only poll the active (live) plan
   useEffect(() => {
@@ -135,11 +151,11 @@ export default function App() {
           plans={plans}
           activePlanId={activePlanId}
           onSelectPlan={(id) => {
-            // Clicking the active plan entry returns to live view
             if (id === (plan?.gameId) && !isReadOnly) return
             handleSelectPlan(id)
           }}
           onNewPlan={handleNewPlan}
+          onOpenRoster={() => { setSidebarOpen(false); setRosterOpen(true) }}
           isOpen={sidebarOpen}
           onClose={() => setSidebarOpen(false)}
         />
@@ -186,6 +202,11 @@ export default function App() {
                 <BattingOrderCard plan={plan} />
                 <InningCard plan={plan} />
               </div>
+
+              {/* Position history — full width below */}
+              <div className="mt-4 lg:mt-6">
+                <PositionHistoryCard plan={plan} />
+              </div>
             </>
           )}
         </main>
@@ -200,6 +221,15 @@ export default function App() {
         onPlanUpdate={handlePlanUpdate}
         newPlanMode={newPlanMode}
         onNewPlanModeEnd={() => setNewPlanMode(false)}
+      />
+
+      {/* Roster panel */}
+      <RosterPanel
+        isOpen={rosterOpen}
+        onClose={() => setRosterOpen(false)}
+        roster={roster}
+        passcode={passcode}
+        onRosterUpdate={setRoster}
       />
 
       {/* Toast */}

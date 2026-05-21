@@ -1,4 +1,4 @@
-export default function Sidebar({ plans, activePlanId, onSelectPlan, onNewPlan, isOpen, onClose }) {
+export default function Sidebar({ plans, activePlanId, onSelectPlan, onNewPlan, onOpenRoster, isOpen, onClose }) {
   return (
     <>
       {/* Mobile overlay */}
@@ -64,18 +64,25 @@ export default function Sidebar({ plans, activePlanId, onSelectPlan, onNewPlan, 
           })}
         </nav>
 
-        <div className="p-3 border-t border-gray-800">
+        <div className="p-3 border-t border-gray-800 flex flex-col gap-2">
           <button
-            onClick={() => {
-              onNewPlan()
-              onClose()
-            }}
+            onClick={() => { onNewPlan(); onClose() }}
             className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-brand-600 hover:bg-brand-500 text-white text-sm font-semibold transition"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>
             New Game Plan
+          </button>
+          <button
+            onClick={() => { onOpenRoster(); onClose() }}
+            className="w-full flex items-center justify-center gap-2 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 text-sm transition"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            Manage Roster
           </button>
         </div>
       </aside>

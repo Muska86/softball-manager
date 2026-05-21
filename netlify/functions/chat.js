@@ -79,9 +79,17 @@ export default async function handler(req, context) {
     return Response.json({ error: 'Missing message' }, { status: 400 })
   }
 
+  // Pull roster from Blobs to give Claude team context for new plans
+  const store = getStore({ name: 'softball', consistency: 'strong' })
+  const rosterRaw = await store.get('roster', { type: 'text' }).catch(() => null)
+  const roster = rosterRaw ? (JSON.parse(rosterRaw).roster ?? []) : []
+  const rosterContext = roster.length > 0
+    ? `\n\nTeam roster (use these players for new plans): ${roster.join(', ')}`
+    : ''
+
   const userContent = currentPlan
-    ? `Current game plan:\n${JSON.stringify(currentPlan, null, 2)}\n\nCoach request: ${message}`
-    : `No current plan exists yet.\n\nCoach request: ${message}`
+    ? `Current game plan:\n${JSON.stringify(currentPlan, null, 2)}${rosterContext}\n\nCoach request: ${message}`
+    : `No current plan exists yet.${rosterContext}\n\nCoach request: ${message}`
 
   try {
     const response = await client.messages.create({
