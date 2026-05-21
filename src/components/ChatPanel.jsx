@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import MarkdownMessage from './MarkdownMessage.jsx'
 
 const NEW_PLAN_PROMPT = "I'd like to create a new game plan. Please ask me for the details you need (game number, date, player roster, lead-off batter)."
 
@@ -140,16 +141,20 @@ export default function ChatPanel({ isOpen, onClose, plan, passcode, onPlanUpdat
             <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
               <div
                 className={`
-                  max-w-[85%] px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed
+                  max-w-[85%] px-3.5 py-2.5 rounded-2xl text-sm
                   ${msg.role === 'user'
                     ? 'bg-brand-700 text-white rounded-br-sm'
                     : msg.error
                     ? 'bg-red-900/40 border border-red-800 text-red-300 rounded-bl-sm'
-                    : 'bg-gray-800 text-gray-200 rounded-bl-sm'
+                    : 'bg-gray-800 rounded-bl-sm'
                   }
                 `}
               >
-                {msg.content}
+                {msg.role === 'user' ? (
+                  <span className="leading-relaxed">{msg.content}</span>
+                ) : (
+                  <MarkdownMessage content={msg.content} />
+                )}
               </div>
             </div>
           ))}
