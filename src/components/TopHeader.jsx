@@ -12,8 +12,9 @@ export default function TopHeader({ title, date, liveStatus, onMenuToggle, onCha
           </svg>
         </button>
         <span className="text-lg font-bold text-white flex items-center gap-2">
-          <span className="text-xl">⚾</span>
-          <span className="hidden sm:inline">Softball Manager</span>
+          <span className="text-xl">🦝</span>
+          <span className="hidden sm:inline">Trash Pandas</span>
+          <span className="hidden lg:inline text-gray-500 font-normal text-sm">— Softball Game Plan Manager</span>
         </span>
       </div>
 

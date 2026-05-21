@@ -5,13 +5,15 @@ import Sidebar from './components/Sidebar.jsx'
 import BattingOrderCard from './components/BattingOrderCard.jsx'
 import InningCard from './components/InningCard.jsx'
 import ChatPanel from './components/ChatPanel.jsx'
+import { DEMO_PLAN, DEMO_PLANS_LIST } from './demoData.js'
 
 const POLL_INTERVAL = 15_000
+const IS_DEV = import.meta.env.DEV
 
 export default function App() {
-  const [passcode, setPasscode] = useState(() => sessionStorage.getItem('softball-passcode') || '')
-  const [plan, setPlan] = useState(null)
-  const [plans, setPlans] = useState([])
+  const [passcode, setPasscode] = useState(() => IS_DEV ? 'dev' : (sessionStorage.getItem('softball-passcode') || ''))
+  const [plan, setPlan] = useState(IS_DEV ? DEMO_PLAN : null)
+  const [plans, setPlans] = useState(IS_DEV ? DEMO_PLANS_LIST : [])
   const [activePlanId, setActivePlanId] = useState(null) // null = active plan
   const [liveStatus, setLiveStatus] = useState('live')
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -30,6 +32,7 @@ export default function App() {
 
   // Fetch the plans list for the sidebar
   async function fetchPlansList() {
+    if (IS_DEV) return
     try {
       const res = await fetch('/api/plans')
       if (res.ok) {
@@ -43,6 +46,7 @@ export default function App() {
 
   // Fetch a specific plan or the active plan
   const fetchPlan = useCallback(async (id = null) => {
+    if (IS_DEV) return DEMO_PLAN
     const url = id ? `/api/plan?id=${id}` : '/api/plan'
     try {
       const res = await fetch(url)
@@ -60,14 +64,14 @@ export default function App() {
 
   // Initial load
   useEffect(() => {
-    if (!passcode) return
+    if (!passcode || IS_DEV) return
     fetchPlansList()
     fetchPlan()
   }, [passcode, fetchPlan])
 
   // Polling — only poll the active (live) plan
   useEffect(() => {
-    if (!passcode || isReadOnly) return
+    if (!passcode || isReadOnly || IS_DEV) return
 
     const interval = setInterval(async () => {
       try {
