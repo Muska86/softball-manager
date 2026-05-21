@@ -198,13 +198,11 @@ export default function App() {
               </div>
 
               {/* Dashboard grid */}
-              <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 lg:gap-6 items-start">
-                <BattingOrderCard plan={plan} />
-                <InningCard plan={plan} />
-              </div>
-
-              {/* Position history — full width below */}
-              <div className="mt-4 lg:mt-6">
+              <div className="flex flex-col gap-4 lg:gap-6">
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 lg:gap-6">
+                  <BattingOrderCard plan={plan} />
+                  <InningCard plan={plan} />
+                </div>
                 <PositionHistoryCard plan={plan} />
               </div>
             </>
