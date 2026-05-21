@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import MarkdownMessage from './MarkdownMessage.jsx'
 
-const IS_DEV = import.meta.env.DEV
 const NEW_PLAN_PROMPT = "I'd like to create a new game plan. Please ask me for the details you need (game number, date, player roster, lead-off batter)."
 
 export default function ChatPanel({ isOpen, onClose, plan, passcode, onPlanUpdate, newPlanMode, onNewPlanModeEnd }) {
@@ -155,13 +154,6 @@ export default function ChatPanel({ isOpen, onClose, plan, passcode, onPlanUpdat
             </svg>
           </button>
         </div>
-
-        {/* Dev mode notice */}
-        {IS_DEV && (
-          <div className="px-4 py-2 bg-amber-900/30 border-b border-amber-800/40 text-amber-400 text-xs text-center">
-            Local dev — chat requires a deployed Netlify backend
-          </div>
-        )}
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-thin">
