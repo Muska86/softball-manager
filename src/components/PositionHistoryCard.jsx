@@ -44,7 +44,7 @@ export default function PositionHistoryCard({ plan }) {
   const { innings = [], battingOrder = [] } = plan
   if (innings.length === 0) return null
 
-  const players = battingOrder.map((b) => b.name)
+  const players = battingOrder.map((b) => b.name).sort((a, b) => a.localeCompare(b))
   const matrix = buildMatrix(innings, players)
 
   return (
