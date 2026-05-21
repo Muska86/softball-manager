@@ -149,7 +149,7 @@ export default function App() {
         onChatToggle={() => { setNewPlanMode(false); setChatOpen((o) => !o) }}
       />
 
-      <div className="flex flex-1 lg:overflow-hidden">
+      <div className="flex flex-1 min-w-0 lg:overflow-hidden">
         <Sidebar
           plans={plans}
           activePlanId={activePlanId}
@@ -164,7 +164,7 @@ export default function App() {
         />
 
         {/* Main content */}
-        <main className="flex-1 lg:overflow-y-auto overscroll-none p-4 pb-10 lg:p-6 lg:pb-10">
+        <main className="flex-1 min-w-0 lg:overflow-y-auto overscroll-none p-4 pb-10 lg:p-6 lg:pb-10">
           {!plan ? (
             <div className="flex flex-col items-center justify-center h-full text-gray-600 gap-4">
               <span className="text-5xl">⚾</span>
