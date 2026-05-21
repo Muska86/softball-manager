@@ -37,7 +37,7 @@ export default function BattingOrderCard({ plan }) {
   const leadoffName = battingOrder.find((b) => b.slot === leadoffSlot)?.name
 
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">
+    <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden h-full">
       {/* Card header */}
       <div className="px-5 py-4 border-b border-gray-800 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">

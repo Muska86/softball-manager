@@ -35,7 +35,7 @@ export default function InningCard({ plan }) {
   }
 
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">
+    <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden h-full">
       {/* Card header */}
       <div className="px-5 py-4 border-b border-gray-800 flex items-center gap-2">
         <svg className="w-4 h-4 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
