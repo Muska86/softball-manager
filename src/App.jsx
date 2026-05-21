@@ -142,7 +142,7 @@ export default function App() {
   }
 
   return (
-    <div className="flex flex-col bg-gray-950 min-h-dvh lg:h-dvh lg:overflow-hidden">
+    <div className="flex flex-col bg-gray-950 min-h-dvh overflow-x-hidden lg:h-dvh lg:overflow-hidden">
       <TopHeader
         liveStatus={isReadOnly ? 'readonly' : liveStatus}
         onMenuToggle={() => setSidebarOpen((o) => !o)}
