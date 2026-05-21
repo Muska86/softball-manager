@@ -258,7 +258,7 @@ export default function ChatPanel({ isOpen, onClose, plan, passcode, onPlanUpdat
 
         {/* Input */}
         {!isReadOnly && (
-          <form onSubmit={handleSubmit} className="flex gap-2 p-3 border-t border-gray-800 shrink-0 items-end" style={{ paddingBottom: 'max(4rem, env(safe-area-inset-bottom, 4rem))' }}>
+          <form onSubmit={handleSubmit} className="flex gap-2 p-3 border-t border-gray-800 shrink-0 items-end" style={{ paddingBottom: 'max(2.5rem, env(safe-area-inset-bottom, 2.5rem))' }}>
             <textarea
               ref={textareaRef}
               value={input}
