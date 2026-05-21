@@ -232,7 +232,8 @@ export default function ChatPanel({ isOpen, onClose, plan, passcode, onPlanUpdat
               placeholder={newPlanMode ? 'Describe your team… (Shift+Enter for new line)' : 'Ask Claude… (Shift+Enter for new line)'}
               disabled={loading}
               rows={1}
-              className="flex-1 px-3.5 py-2.5 rounded-xl bg-gray-800 border border-gray-700 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 disabled:opacity-50 transition resize-none overflow-hidden leading-relaxed"
+              style={{ fontSize: '16px' }}
+              className="flex-1 px-3.5 py-2.5 rounded-xl bg-gray-800 border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 disabled:opacity-50 transition resize-none overflow-hidden leading-relaxed"
             />
             <button
               type="submit"

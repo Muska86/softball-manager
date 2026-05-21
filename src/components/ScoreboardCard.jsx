@@ -66,7 +66,8 @@ export default function ScoreboardCard({ plan }) {
                     value={score}
                     onChange={(e) => setScore(setUsScores, i, e.target.value)}
                     placeholder="—"
-                    className="w-10 h-9 text-center text-sm font-mono font-semibold bg-gray-800 text-white rounded-lg border border-gray-700 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 placeholder-gray-600 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                    style={{ fontSize: '16px' }}
+                    className="w-10 h-9 text-center font-mono font-semibold bg-gray-800 text-white rounded-lg border border-gray-700 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 placeholder-gray-600 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                   />
                 </td>
               ))}
@@ -87,7 +88,8 @@ export default function ScoreboardCard({ plan }) {
                     onChange={(e) => setOpponentName(e.target.value)}
                     onBlur={() => setEditingOpponent(false)}
                     onKeyDown={(e) => e.key === 'Enter' && setEditingOpponent(false)}
-                    className="bg-transparent border-b border-brand-500 text-white text-sm font-semibold focus:outline-none w-28"
+                    style={{ fontSize: '16px' }}
+                    className="bg-transparent border-b border-brand-500 text-white font-semibold focus:outline-none w-28"
                   />
                 ) : (
                   <button
@@ -111,7 +113,8 @@ export default function ScoreboardCard({ plan }) {
                     value={score}
                     onChange={(e) => setScore(setThemScores, i, e.target.value)}
                     placeholder="—"
-                    className="w-10 h-9 text-center text-sm font-mono font-semibold bg-gray-800 text-white rounded-lg border border-gray-700 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 placeholder-gray-600 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                    style={{ fontSize: '16px' }}
+                    className="w-10 h-9 text-center font-mono font-semibold bg-gray-800 text-white rounded-lg border border-gray-700 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 placeholder-gray-600 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                   />
                 </td>
               ))}
