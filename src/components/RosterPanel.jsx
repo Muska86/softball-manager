@@ -92,7 +92,7 @@ export default function RosterPanel({ isOpen, onClose, roster, preferences = {},
       {/* Panel */}
       <div
         className={`
-          fixed top-0 right-0 bottom-0 z-50 w-96
+          fixed top-0 right-0 bottom-0 z-50 w-80 sm:w-96
           bg-gray-900 border-l border-gray-800 shadow-2xl
           flex flex-col transition-transform duration-200
           ${isOpen ? 'translate-x-0' : 'translate-x-full'}
