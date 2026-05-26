@@ -54,7 +54,7 @@ export default function ScoreboardCard({ plan, onPlanPatch }) {
   function renderUsRow() {
     return (
       <tr>
-        <td className="px-5 py-3 font-semibold text-white whitespace-nowrap">🦝 Trash Pandas</td>
+        <td className="px-5 py-3 font-semibold text-white whitespace-nowrap">Trash Pandas</td>
         {usScores.map((score, i) => (
           <td key={i} className="px-1.5 py-2 text-center">
             <input
