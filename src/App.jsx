@@ -1,5 +1,91 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { supabase } from './supabaseClient.js'
+
+function PlanTitleEditor({ title, date, readOnly, onSave }) {
+  const [editingTitle, setEditingTitle] = useState(false)
+  const [editingDate, setEditingDate] = useState(false)
+  const [draftTitle, setDraftTitle] = useState(title)
+  const [draftDate, setDraftDate] = useState(date ?? '')
+
+  // Keep drafts in sync if the plan changes from outside (e.g. Realtime)
+  useEffect(() => { if (!editingTitle) setDraftTitle(title) }, [title, editingTitle])
+  useEffect(() => { if (!editingDate) setDraftDate(date ?? '') }, [date, editingDate])
+
+  function commitTitle() {
+    setEditingTitle(false)
+    const trimmed = draftTitle.trim()
+    if (trimmed && trimmed !== title) onSave(trimmed, date)
+    else setDraftTitle(title)
+  }
+
+  function commitDate() {
+    setEditingDate(false)
+    if (draftDate && draftDate !== date) onSave(title, draftDate)
+    else setDraftDate(date ?? '')
+  }
+
+  const formattedDate = date
+    ? new Date(date + 'T12:00:00').toLocaleDateString('en-US', {
+        weekday: 'long', month: 'long', day: 'numeric', year: 'numeric',
+      })
+    : ''
+
+  return (
+    <div>
+      {/* Title */}
+      {editingTitle ? (
+        <input
+          autoFocus
+          value={draftTitle}
+          onChange={(e) => setDraftTitle(e.target.value)}
+          onBlur={commitTitle}
+          onKeyDown={(e) => { if (e.key === 'Enter') commitTitle(); if (e.key === 'Escape') { setEditingTitle(false); setDraftTitle(title) } }}
+          className="text-xl font-bold bg-transparent border-b border-brand-500 text-white focus:outline-none w-full max-w-sm"
+          style={{ fontSize: '1.25rem' }}
+        />
+      ) : (
+        <div className="flex items-center justify-center lg:justify-start gap-2 group">
+          <h2 className="text-xl font-bold text-white">{title}</h2>
+          {!readOnly && (
+            <button onClick={() => setEditingTitle(true)} title="Edit title"
+              className="opacity-0 group-hover:opacity-100 focus:opacity-100 transition text-gray-600 hover:text-gray-300">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d="M15.232 5.232l3.536 3.536M9 13l6.586-6.586a2 2 0 112.828 2.828L11.828 15.828A2 2 0 0110 16H8v-2a2 2 0 01.586-1.414z" />
+              </svg>
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Date */}
+      {editingDate ? (
+        <input
+          autoFocus
+          type="date"
+          value={draftDate}
+          onChange={(e) => setDraftDate(e.target.value)}
+          onBlur={commitDate}
+          onKeyDown={(e) => { if (e.key === 'Enter') commitDate(); if (e.key === 'Escape') { setEditingDate(false); setDraftDate(date ?? '') } }}
+          className="mt-0.5 text-sm bg-transparent border-b border-brand-500 text-gray-300 focus:outline-none"
+        />
+      ) : (
+        <div className="flex items-center justify-center lg:justify-start gap-1.5 group mt-0.5">
+          {formattedDate && <p className="text-sm text-gray-400">{formattedDate}</p>}
+          {!readOnly && (
+            <button onClick={() => setEditingDate(true)} title="Edit date"
+              className="opacity-0 group-hover:opacity-100 focus:opacity-100 transition text-gray-600 hover:text-gray-300">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d="M15.232 5.232l3.536 3.536M9 13l6.586-6.586a2 2 0 112.828 2.828L11.828 15.828A2 2 0 0110 16H8v-2a2 2 0 01.586-1.414z" />
+              </svg>
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
 import PasscodeModal from './components/PasscodeModal.jsx'
 import TopHeader from './components/TopHeader.jsx'
 import Sidebar from './components/Sidebar.jsx'
@@ -222,21 +308,19 @@ export default function App() {
           ) : (
             <>
               {/* Plan title bar */}
-              <div className="flex items-baseline justify-between mb-6 gap-2">
+              <div className="flex items-start justify-between mb-6 gap-2">
                 <div className="flex-1 text-center lg:text-left">
-                  <h2 className="text-xl font-bold text-white">{plan.title}</h2>
-                  {plan.date && (
-                    <p className="text-sm text-gray-400 mt-0.5">
-                      {new Date(plan.date + 'T12:00:00').toLocaleDateString('en-US', {
-                        weekday: 'long', month: 'long', day: 'numeric', year: 'numeric',
-                      })}
-                    </p>
-                  )}
+                  <PlanTitleEditor
+                    title={plan.title}
+                    date={plan.date}
+                    readOnly={isReadOnly}
+                    onSave={(title, date) => savePlanPatch({ title, date }).then(() => fetchPlansList())}
+                  />
                 </div>
                 {isReadOnly && (
                   <button
                     onClick={() => handleSelectPlan(null)}
-                    className="text-xs text-brand-400 hover:text-brand-300 underline shrink-0"
+                    className="text-xs text-brand-400 hover:text-brand-300 underline shrink-0 mt-1"
                   >
                     Back to live plan
                   </button>
