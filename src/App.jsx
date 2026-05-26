@@ -153,6 +153,26 @@ export default function App() {
     setLiveStatus('live')
   }
 
+  // Delete a plan
+  async function handleDeletePlan(id) {
+    try {
+      const res = await fetch(`/api/plan?id=${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+        headers: { 'x-passcode': passcode },
+      })
+      if (!res.ok) return
+      const wasViewing = activePlanId === id || (!activePlanId && plan?.gameId === id)
+      await fetchPlansList()
+      if (wasViewing) {
+        setActivePlanId(null)
+        const next = await fetchPlan()
+        if (!next) setPlan(null)
+      }
+    } catch {
+      // non-fatal
+    }
+  }
+
   // New plan button
   function handleNewPlan() {
     setNewPlanMode(true)
@@ -180,6 +200,7 @@ export default function App() {
             handleSelectPlan(id)
           }}
           onNewPlan={handleNewPlan}
+          onDeletePlan={handleDeletePlan}
           onOpenRoster={() => { setSidebarOpen(false); setRosterOpen(true) }}
           isOpen={sidebarOpen}
           onClose={() => setSidebarOpen(false)}

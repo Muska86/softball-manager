@@ -173,6 +173,22 @@ async function handlePlan(req, res) {
     return json(res, 200, { ok: true, version: plan.version })
   }
 
+  if (req.method === 'DELETE') {
+    if (!checkPasscode(req)) return json(res, 401, { error: 'Invalid passcode' })
+    const url = new URL(req.url, `http://localhost:${PORT}`)
+    const id = url.searchParams.get('id')
+    if (!id) return json(res, 400, { error: 'Missing id' })
+
+    const db = await readDB()
+    const wasActive = db.activePlanId === id
+    db.plans = db.plans.filter((p) => p.gameId !== id)
+    if (wasActive) {
+      db.activePlanId = db.plans[0]?.gameId ?? null
+    }
+    await writeDB(db)
+    return json(res, 200, { ok: true })
+  }
+
   json(res, 405, { error: 'Method not allowed' })
 }
 
