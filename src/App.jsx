@@ -224,11 +224,11 @@ export default function App() {
 
               {/* Dashboard grid */}
               <div className="flex flex-col gap-4 lg:gap-6">
+                <ScoreboardCard plan={plan} onPlanPatch={isReadOnly ? null : savePlanPatch} />
                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 lg:gap-6">
                   <BattingOrderCard plan={plan} onPlanPatch={isReadOnly ? null : savePlanPatch} />
                   <InningCard plan={plan} />
                 </div>
-                <ScoreboardCard plan={plan} onPlanPatch={isReadOnly ? null : savePlanPatch} />
               </div>
             </>
           )}
