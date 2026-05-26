@@ -5,7 +5,6 @@ import TopHeader from './components/TopHeader.jsx'
 import Sidebar from './components/Sidebar.jsx'
 import BattingOrderCard from './components/BattingOrderCard.jsx'
 import InningCard from './components/InningCard.jsx'
-import PositionHistoryCard from './components/PositionHistoryCard.jsx'
 import ChatPanel from './components/ChatPanel.jsx'
 import RosterPanel from './components/RosterPanel.jsx'
 import ScoreboardCard from './components/ScoreboardCard.jsx'
@@ -230,7 +229,6 @@ export default function App() {
                   <InningCard plan={plan} />
                 </div>
                 <ScoreboardCard plan={plan} onPlanPatch={isReadOnly ? null : savePlanPatch} />
-                <PositionHistoryCard plan={plan} />
               </div>
             </>
           )}
