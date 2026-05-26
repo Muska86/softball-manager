@@ -4,7 +4,7 @@ const scoreInputClass =
   'w-10 h-9 text-center font-mono font-semibold bg-gray-800 text-white rounded-lg border border-gray-700 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 placeholder-gray-600 disabled:opacity-50 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none'
 
 export default function ScoreboardCard({ plan, onPlanPatch }) {
-  const inningCount = Math.max(plan?.innings?.length ?? 0, 6)
+  const inningCount = Math.max(plan?.innings?.length ?? 0, 4)
   const saved = plan?.scoreboard
   const isHome = plan?.homeOrAway === 'home'
 
