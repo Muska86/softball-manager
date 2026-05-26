@@ -42,6 +42,7 @@ export default function ChatPanel({ isOpen, onClose, plan, passcode, onPlanUpdat
       if (!panelRef.current) return
       panelRef.current.style.top = `${window.visualViewport.offsetTop}px`
       panelRef.current.style.height = `${window.visualViewport.height}px`
+      panelRef.current.style.bottom = 'auto'
     }
 
     window.visualViewport.addEventListener('resize', update)
@@ -54,6 +55,7 @@ export default function ChatPanel({ isOpen, onClose, plan, passcode, onPlanUpdat
       if (panelRef.current) {
         panelRef.current.style.top = ''
         panelRef.current.style.height = ''
+        panelRef.current.style.bottom = ''
       }
     }
   }, [isOpen])
