@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { supabase } from './supabaseClient.js'
 import PasscodeModal from './components/PasscodeModal.jsx'
 import TopHeader from './components/TopHeader.jsx'
@@ -124,6 +124,26 @@ export default function App() {
     }
   }
 
+  // Direct plan patch — used by UI components (scoreboard, batting order)
+  const savePlanPatch = useCallback(async (patch) => {
+    if (isReadOnly || !plan) return
+    const updated = { ...plan, ...patch }
+    try {
+      const res = await fetch('/api/plan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-passcode': passcode },
+        body: JSON.stringify(updated),
+      })
+      if (res.ok) {
+        const { version } = await res.json()
+        setPlan({ ...updated, version })
+        versionRef.current = version
+      }
+    } catch {
+      // non-fatal
+    }
+  }, [isReadOnly, plan, passcode])
+
   // When Claude returns an updated plan (from chat)
   function handlePlanUpdate(updatedPlan) {
     setPlan(updatedPlan)
@@ -206,10 +226,10 @@ export default function App() {
               {/* Dashboard grid */}
               <div className="flex flex-col gap-4 lg:gap-6">
                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 lg:gap-6">
-                  <BattingOrderCard plan={plan} />
+                  <BattingOrderCard plan={plan} onPlanPatch={isReadOnly ? null : savePlanPatch} />
                   <InningCard plan={plan} />
                 </div>
-                <ScoreboardCard plan={plan} />
+                <ScoreboardCard plan={plan} onPlanPatch={isReadOnly ? null : savePlanPatch} />
                 <PositionHistoryCard plan={plan} />
               </div>
             </>

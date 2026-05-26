@@ -1,12 +1,21 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
-export default function BattingOrderCard({ plan }) {
+export default function BattingOrderCard({ plan, onPlanPatch }) {
   const { battingOrder = [], leadoffNote } = plan
 
-  // slot number (1-based) of who leads off the current display
-  const [leadoffSlot, setLeadoffSlot] = useState(1)
-  // slot number of the last batter marked, or null
-  const [lastBatterSlot, setLastBatterSlot] = useState(null)
+  const [leadoffSlot, setLeadoffSlot] = useState(plan?.battingState?.leadoffSlot ?? 1)
+  const [lastBatterSlot, setLastBatterSlot] = useState(plan?.battingState?.lastBatterSlot ?? null)
+
+  // Sync local state when plan updates from Realtime (another coach's changes)
+  useEffect(() => {
+    if (!plan?.battingState) return
+    setLeadoffSlot(plan.battingState.leadoffSlot ?? 1)
+    setLastBatterSlot(plan.battingState.lastBatterSlot ?? null)
+  }, [plan?.battingState]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  function saveBattingState(newLeadoffSlot, newLastBatterSlot) {
+    onPlanPatch?.({ battingState: { leadoffSlot: newLeadoffSlot, lastBatterSlot: newLastBatterSlot } })
+  }
 
   // Rotate the batting order so it starts at leadoffSlot
   const rotatedOrder = (() => {
@@ -17,7 +26,9 @@ export default function BattingOrderCard({ plan }) {
   })()
 
   function toggleLastBatter(slot) {
-    setLastBatterSlot((prev) => (prev === slot ? null : slot))
+    const newSlot = lastBatterSlot === slot ? null : slot
+    setLastBatterSlot(newSlot)
+    saveBattingState(leadoffSlot, newSlot)
   }
 
   function advanceInning() {
@@ -25,13 +36,16 @@ export default function BattingOrderCard({ plan }) {
     const slots = battingOrder.map((b) => b.slot).sort((a, b) => a - b)
     const currentIdx = slots.indexOf(lastBatterSlot)
     const nextIdx = (currentIdx + 1) % slots.length
-    setLeadoffSlot(slots[nextIdx])
+    const newLeadoff = slots[nextIdx]
+    setLeadoffSlot(newLeadoff)
     setLastBatterSlot(null)
+    saveBattingState(newLeadoff, null)
   }
 
   function resetOrder() {
     setLeadoffSlot(1)
     setLastBatterSlot(null)
+    saveBattingState(1, null)
   }
 
   const leadoffName = battingOrder.find((b) => b.slot === leadoffSlot)?.name
@@ -48,7 +62,7 @@ export default function BattingOrderCard({ plan }) {
           <h3 className="font-semibold text-white tracking-tight">Batting Order</h3>
         </div>
 
-        {leadoffSlot !== 1 && (
+        {onPlanPatch && leadoffSlot !== 1 && (
           <button
             onClick={resetOrder}
             className="text-xs text-gray-500 hover:text-gray-300 transition"
@@ -63,7 +77,7 @@ export default function BattingOrderCard({ plan }) {
         <span className="text-xs text-brand-400 font-medium">
           Leads off: <span className="text-brand-300">{leadoffName}</span>
         </span>
-        {lastBatterSlot !== null && (
+        {onPlanPatch && lastBatterSlot !== null && (
           <button
             onClick={advanceInning}
             className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-brand-700 hover:bg-brand-600 text-white text-xs font-semibold transition"
@@ -106,29 +120,28 @@ export default function BattingOrderCard({ plan }) {
               </span>
 
               {/* Last-at-bat marker */}
-              <button
-                onClick={() => toggleLastBatter(batter.slot)}
-                title={isLastBatter ? 'Clear last at bat' : 'Mark as last at bat'}
-                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition
-                  ${isLastBatter
-                    ? 'bg-amber-600/30 border border-amber-600/60 text-amber-400'
-                    : 'text-gray-600 hover:text-gray-400 hover:bg-gray-800'
-                  }`}
-              >
-                {isLastBatter ? (
-                  <>
-                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" />
-                    Last at bat
-                  </>
-                ) : (
-                  <span className="opacity-0 group-hover:opacity-100">·· ·</span>
-                )}
-                {!isLastBatter && (
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <circle cx="12" cy="12" r="9" strokeWidth={1.5} />
-                  </svg>
-                )}
-              </button>
+              {onPlanPatch && (
+                <button
+                  onClick={() => toggleLastBatter(batter.slot)}
+                  title={isLastBatter ? 'Clear last at bat' : 'Mark as last at bat'}
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition
+                    ${isLastBatter
+                      ? 'bg-amber-600/30 border border-amber-600/60 text-amber-400'
+                      : 'text-gray-600 hover:text-gray-400 hover:bg-gray-800'
+                    }`}
+                >
+                  {isLastBatter ? (
+                    <>
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" />
+                      Last at bat
+                    </>
+                  ) : (
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <circle cx="12" cy="12" r="9" strokeWidth={1.5} />
+                    </svg>
+                  )}
+                </button>
+              )}
             </li>
           )
         })}

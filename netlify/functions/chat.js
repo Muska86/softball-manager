@@ -138,7 +138,8 @@ export default async function handler(req, context) {
 
     // If Claude returned an updated plan, persist it to Supabase
     if (parsed.updatedPlan) {
-      const plan = parsed.updatedPlan
+      // Merge coach-entered fields (scoreboard, battingState) so Claude doesn't wipe them
+      const plan = { ...currentPlan, ...parsed.updatedPlan }
       plan.version = (currentPlan?.version || 0) + 1
       plan.lastUpdated = new Date().toISOString()
       parsed.updatedPlan = plan

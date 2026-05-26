@@ -1,25 +1,44 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
-export default function ScoreboardCard({ plan }) {
+export default function ScoreboardCard({ plan, onPlanPatch }) {
   const inningCount = Math.max(plan?.innings?.length ?? 0, 6)
+  const saved = plan?.scoreboard
 
-  const [opponentName, setOpponentName] = useState('Opponent')
+  const [opponentName, setOpponentName] = useState(saved?.opponentName ?? 'Opponent')
   const [editingOpponent, setEditingOpponent] = useState(false)
-  const [usScores, setUsScores] = useState(() => Array(inningCount).fill(''))
-  const [themScores, setThemScores] = useState(() => Array(inningCount).fill(''))
+  const [usScores, setUsScores] = useState(() => saved?.usScores ?? Array(inningCount).fill(''))
+  const [themScores, setThemScores] = useState(() => saved?.themScores ?? Array(inningCount).fill(''))
+
+  // Sync local state when plan updates from Realtime (another coach's changes)
+  useEffect(() => {
+    if (!plan?.scoreboard) return
+    setOpponentName(plan.scoreboard.opponentName ?? 'Opponent')
+    setUsScores(plan.scoreboard.usScores ?? Array(inningCount).fill(''))
+    setThemScores(plan.scoreboard.themScores ?? Array(inningCount).fill(''))
+  }, [plan?.scoreboard]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function setScore(setter, idx, raw) {
     const val = raw === '' ? '' : String(Math.max(0, parseInt(raw) || 0))
     setter((prev) => prev.map((s, i) => (i === idx ? val : s)))
   }
 
+  function saveScoreboard(latestUs, latestThem, latestOpponent) {
+    onPlanPatch?.({
+      scoreboard: {
+        opponentName: latestOpponent ?? opponentName,
+        usScores:     latestUs    ?? usScores,
+        themScores:   latestThem  ?? themScores,
+      },
+    })
+  }
+
   function total(scores) {
     return scores.reduce((sum, s) => sum + (parseInt(s) || 0), 0)
   }
 
-  const usTotal = total(usScores)
-  const themTotal = total(themScores)
-  const usWinning = usTotal > themTotal
+  const usTotal    = total(usScores)
+  const themTotal  = total(themScores)
+  const usWinning  = usTotal > themTotal
   const themWinning = themTotal > usTotal
 
   const innings = Array.from({ length: inningCount }, (_, i) => i + 1)
@@ -33,7 +52,9 @@ export default function ScoreboardCard({ plan }) {
             d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
         </svg>
         <h3 className="font-semibold text-white tracking-tight">Scoreboard</h3>
-        <span className="ml-auto text-xs text-gray-500">Tap a cell to enter score</span>
+        <span className="ml-auto text-xs text-gray-500">
+          {onPlanPatch ? 'Tap a cell to enter score' : 'Read-only'}
+        </span>
       </div>
 
       {/* Scoreboard table */}
@@ -64,10 +85,15 @@ export default function ScoreboardCard({ plan }) {
                     type="number"
                     min="0"
                     value={score}
+                    disabled={!onPlanPatch}
                     onChange={(e) => setScore(setUsScores, i, e.target.value)}
+                    onBlur={(e) => {
+                      const next = usScores.map((s, idx) => idx === i ? (e.target.value === '' ? '' : String(Math.max(0, parseInt(e.target.value) || 0))) : s)
+                      saveScoreboard(next, null, null)
+                    }}
                     placeholder="—"
                     style={{ fontSize: '16px' }}
-                    className="w-10 h-9 text-center font-mono font-semibold bg-gray-800 text-white rounded-lg border border-gray-700 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 placeholder-gray-600 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                    className="w-10 h-9 text-center font-mono font-semibold bg-gray-800 text-white rounded-lg border border-gray-700 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 placeholder-gray-600 disabled:opacity-50 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                   />
                 </td>
               ))}
@@ -86,22 +112,32 @@ export default function ScoreboardCard({ plan }) {
                     autoFocus
                     value={opponentName}
                     onChange={(e) => setOpponentName(e.target.value)}
-                    onBlur={() => setEditingOpponent(false)}
-                    onKeyDown={(e) => e.key === 'Enter' && setEditingOpponent(false)}
+                    onBlur={() => {
+                      setEditingOpponent(false)
+                      saveScoreboard(null, null, opponentName)
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        setEditingOpponent(false)
+                        saveScoreboard(null, null, opponentName)
+                      }
+                    }}
                     style={{ fontSize: '16px' }}
                     className="bg-transparent border-b border-brand-500 text-white font-semibold focus:outline-none w-28"
                   />
                 ) : (
                   <button
-                    onClick={() => setEditingOpponent(true)}
-                    title="Tap to rename opponent"
-                    className="flex items-center gap-1.5 hover:text-white transition group"
+                    onClick={() => onPlanPatch && setEditingOpponent(true)}
+                    title={onPlanPatch ? 'Tap to rename opponent' : undefined}
+                    className={`flex items-center gap-1.5 transition group ${onPlanPatch ? 'hover:text-white' : 'cursor-default'}`}
                   >
                     {opponentName}
-                    <svg className="w-3 h-3 text-gray-600 group-hover:text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                        d="M15.232 5.232l3.536 3.536M9 13l6.586-6.586a2 2 0 112.828 2.828L11.828 15.828A2 2 0 0110 16H8v-2a2 2 0 01.586-1.414z" />
-                    </svg>
+                    {onPlanPatch && (
+                      <svg className="w-3 h-3 text-gray-600 group-hover:text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                          d="M15.232 5.232l3.536 3.536M9 13l6.586-6.586a2 2 0 112.828 2.828L11.828 15.828A2 2 0 0110 16H8v-2a2 2 0 01.586-1.414z" />
+                      </svg>
+                    )}
                   </button>
                 )}
               </td>
@@ -111,10 +147,15 @@ export default function ScoreboardCard({ plan }) {
                     type="number"
                     min="0"
                     value={score}
+                    disabled={!onPlanPatch}
                     onChange={(e) => setScore(setThemScores, i, e.target.value)}
+                    onBlur={(e) => {
+                      const next = themScores.map((s, idx) => idx === i ? (e.target.value === '' ? '' : String(Math.max(0, parseInt(e.target.value) || 0))) : s)
+                      saveScoreboard(null, next, null)
+                    }}
                     placeholder="—"
                     style={{ fontSize: '16px' }}
-                    className="w-10 h-9 text-center font-mono font-semibold bg-gray-800 text-white rounded-lg border border-gray-700 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 placeholder-gray-600 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                    className="w-10 h-9 text-center font-mono font-semibold bg-gray-800 text-white rounded-lg border border-gray-700 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 placeholder-gray-600 disabled:opacity-50 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                   />
                 </td>
               ))}

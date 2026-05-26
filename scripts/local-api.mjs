@@ -20,7 +20,7 @@ import Anthropic from '@anthropic-ai/sdk'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const DB_PATH = path.resolve(__dirname, '../data/plans.json')
-const PORT = 3001
+const PORT = 3002
 const PASSCODE = process.env.SITE_PASSCODE || 'dev'
 
 // ── SYSTEM_PROMPT — keep in sync with netlify/functions/chat.js ──────────────
@@ -252,7 +252,8 @@ async function handleChat(req, res) {
     }
 
     if (parsed.updatedPlan) {
-      const plan = parsed.updatedPlan
+      // Merge coach-entered fields (scoreboard, battingState) so Claude doesn't wipe them
+      const plan = { ...currentPlan, ...parsed.updatedPlan }
       plan.version = (currentPlan?.version || 0) + 1
       plan.lastUpdated = new Date().toISOString()
       parsed.updatedPlan = plan
