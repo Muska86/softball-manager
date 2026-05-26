@@ -40,6 +40,7 @@ The plan JSON schema is:
   "gameId": "game-N-YYYY-MM-DD",          // e.g. "game-3-2026-05-21"
   "title": "Minor 4 — Game N",
   "date": "YYYY-MM-DD",
+  "homeOrAway": "home" | "away",          // whether Trash Pandas are home or away
   "lastUpdated": "ISO timestamp",
   "version": number,
   "battingOrder": [
@@ -72,7 +73,7 @@ IMPORTANT: Always respond with ONLY a valid JSON object in this exact format —
   "updatedPlan": <full plan JSON object if the plan changed, or null if it did not change>
 }
 
-When creating a new plan, generate a complete plan with all innings populated (typically 4 innings for Minor 4). Ensure the no-consecutive-repeat-position rule is satisfied across all innings.`
+When creating a new plan, always ask "Are you Home or Away for this game?" if the coach hasn't specified, and include the answer as "homeOrAway": "home" or "homeOrAway": "away" in the plan. Generate a complete plan with all innings populated (typically 4 innings for Minor 4). Ensure the no-consecutive-repeat-position rule is satisfied across all innings.`
 
 // ── Anthropic client ─────────────────────────────────────────────────────────
 
