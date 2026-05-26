@@ -25,12 +25,36 @@ export default function ChatPanel({ isOpen, onClose, plan, passcode, onPlanUpdat
     }
   }, [isOpen])
 
-  // Lock background scroll on mobile when panel is open
+  // Lock background scroll on mobile when panel is open.
+  // On iOS Safari, overflow:hidden alone doesn't prevent the page from scrolling
+  // when the keyboard opens. position:fixed on the body is required.
   useEffect(() => {
     const isMobile = window.matchMedia('(max-width: 1023px)').matches
     if (!isMobile) return
-    document.body.style.overflow = isOpen ? 'hidden' : ''
-    return () => { document.body.style.overflow = '' }
+
+    if (isOpen) {
+      const scrollY = window.scrollY
+      document.body.style.position = 'fixed'
+      document.body.style.top = `-${scrollY}px`
+      document.body.style.width = '100%'
+      document.body.style.overflow = 'hidden'
+    } else {
+      const savedTop = document.body.style.top
+      document.body.style.position = ''
+      document.body.style.top = ''
+      document.body.style.width = ''
+      document.body.style.overflow = ''
+      if (savedTop) window.scrollTo(0, -parseInt(savedTop, 10))
+    }
+
+    return () => {
+      const savedTop = document.body.style.top
+      document.body.style.position = ''
+      document.body.style.top = ''
+      document.body.style.width = ''
+      document.body.style.overflow = ''
+      if (savedTop) window.scrollTo(0, -parseInt(savedTop, 10))
+    }
   }, [isOpen])
 
   // Resize panel to match visual viewport so keyboard doesn't cover the input
