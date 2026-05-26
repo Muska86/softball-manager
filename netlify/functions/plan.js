@@ -1,25 +1,33 @@
-import { getStore } from '@netlify/blobs'
+import { createClient } from '@supabase/supabase-js'
 
-function checkPasscode(req) {
-  const provided = req.headers.get('x-passcode')
-  return provided === process.env.SITE_PASSCODE
+function getSupabase() {
+  return createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY)
 }
 
-export default async function handler(req, context) {
-  const store = getStore({ name: 'softball', consistency: 'strong' })
+function checkPasscode(req) {
+  return req.headers.get('x-passcode') === process.env.SITE_PASSCODE
+}
+
+export default async function handler(req) {
+  const supabase = getSupabase()
 
   // GET — return a plan (no auth required)
   if (req.method === 'GET') {
     const url = new URL(req.url)
     const id = url.searchParams.get('id')
-    const key = id ? `plan-${id}` : 'active-plan'
 
     try {
-      const raw = await store.get(key, { type: 'text' })
-      if (!raw) {
+      let query = supabase.from('plans').select('data')
+      if (id) {
+        query = query.eq('game_id', id)
+      } else {
+        query = query.eq('is_active', true)
+      }
+      const { data, error } = await query.single()
+      if (error || !data) {
         return Response.json({ error: 'Plan not found' }, { status: 404 })
       }
-      return Response.json(JSON.parse(raw))
+      return Response.json(data.data)
     } catch (err) {
       console.error('plan GET error:', err)
       return Response.json({ error: 'Failed to load plan' }, { status: 500 })
@@ -47,19 +55,20 @@ export default async function handler(req, context) {
     plan.lastUpdated = new Date().toISOString()
 
     try {
-      await store.setJSON(`plan-${plan.gameId}`, plan)
-      await store.setJSON('active-plan', plan)
+      // Clear current active flag
+      await supabase.from('plans').update({ is_active: false }).eq('is_active', true)
 
-      const raw = await store.get('plan-manifest', { type: 'text' })
-      const manifest = raw ? JSON.parse(raw) : []
-      const existing = manifest.findIndex((m) => m.id === plan.gameId)
-      const entry = { id: plan.gameId, title: plan.title, date: plan.date }
-      if (existing >= 0) {
-        manifest[existing] = entry
-      } else {
-        manifest.push(entry)
-      }
-      await store.setJSON('plan-manifest', manifest)
+      // Upsert this plan as active
+      const { error } = await supabase.from('plans').upsert({
+        game_id: plan.gameId,
+        title: plan.title,
+        date: plan.date,
+        data: plan,
+        version: plan.version,
+        last_updated: plan.lastUpdated,
+        is_active: true,
+      })
+      if (error) throw error
 
       return Response.json({ ok: true, version: plan.version })
     } catch (err) {

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { supabase } from './supabaseClient.js'
 import PasscodeModal from './components/PasscodeModal.jsx'
 import TopHeader from './components/TopHeader.jsx'
 import Sidebar from './components/Sidebar.jsx'
@@ -8,7 +9,6 @@ import PositionHistoryCard from './components/PositionHistoryCard.jsx'
 import ChatPanel from './components/ChatPanel.jsx'
 import RosterPanel from './components/RosterPanel.jsx'
 import ScoreboardCard from './components/ScoreboardCard.jsx'
-const POLL_INTERVAL = 15_000
 
 export default function App() {
   const [passcode, setPasscode] = useState(() => sessionStorage.getItem('softball-passcode') || '')
@@ -83,28 +83,31 @@ export default function App() {
     fetchRoster()
   }, [passcode, fetchPlan, fetchRoster])
 
-  // Polling — only poll the active (live) plan
+  // Realtime — subscribe to changes on the active plan row
   useEffect(() => {
     if (!passcode || isReadOnly) return
 
-    const interval = setInterval(async () => {
-      try {
-        const res = await fetch('/api/version')
-        if (!res.ok) return
-        const { version } = await res.json()
-        if (version > versionRef.current) {
-          setLiveStatus('syncing')
-          await fetchPlan()
-          setLiveStatus('live')
-          showToast('Plan updated by another coach')
-          fetchPlansList()
+    const channel = supabase
+      .channel('active-plan-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'plans', filter: 'is_active=eq.true' },
+        async (payload) => {
+          const newVersion = payload.new?.version ?? 0
+          if (newVersion > versionRef.current) {
+            setLiveStatus('syncing')
+            await fetchPlan()
+            setLiveStatus('live')
+            showToast('Plan updated by another coach')
+            fetchPlansList()
+          }
         }
-      } catch {
-        // ignore transient failures
-      }
-    }, POLL_INTERVAL)
+      )
+      .subscribe()
 
-    return () => clearInterval(interval)
+    return () => {
+      supabase.removeChannel(channel)
+    }
   }, [passcode, isReadOnly, fetchPlan])
 
   // When user selects a past plan from sidebar

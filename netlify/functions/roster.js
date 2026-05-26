@@ -1,16 +1,23 @@
-import { getStore } from '@netlify/blobs'
+import { createClient } from '@supabase/supabase-js'
+
+function getSupabase() {
+  return createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY)
+}
 
 function checkPasscode(req) {
   return req.headers.get('x-passcode') === process.env.SITE_PASSCODE
 }
 
-export default async function handler(req, context) {
-  const store = getStore({ name: 'softball', consistency: 'strong' })
+export default async function handler(req) {
+  const supabase = getSupabase()
 
   if (req.method === 'GET') {
     try {
-      const raw = await store.get('roster', { type: 'text' })
-      return Response.json(raw ? JSON.parse(raw) : { roster: [], preferences: {} })
+      const { data, error } = await supabase.from('roster').select('*').eq('id', 1).single()
+      if (error || !data) {
+        return Response.json({ roster: [], preferences: {} })
+      }
+      return Response.json({ roster: data.roster, preferences: data.preferences })
     } catch (err) {
       console.error('roster GET error:', err)
       return Response.json({ roster: [], preferences: {} }, { status: 500 })
@@ -31,12 +38,20 @@ export default async function handler(req, context) {
       return Response.json({ error: 'roster must be an array' }, { status: 400 })
     }
     try {
-      const existing = await store.get('roster', { type: 'text' }).catch(() => null)
-      const current = existing ? JSON.parse(existing) : {}
-      await store.setJSON('roster', {
+      // Fetch existing preferences if not supplied in body
+      let preferences = body.preferences
+      if (preferences === undefined) {
+        const { data } = await supabase.from('roster').select('preferences').eq('id', 1).single()
+        preferences = data?.preferences ?? {}
+      }
+
+      const { error } = await supabase.from('roster').upsert({
+        id: 1,
         roster: body.roster,
-        preferences: body.preferences ?? current.preferences ?? {},
+        preferences,
       })
+      if (error) throw error
+
       return Response.json({ ok: true })
     } catch (err) {
       console.error('roster POST error:', err)

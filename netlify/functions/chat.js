@@ -1,7 +1,11 @@
 import Anthropic from '@anthropic-ai/sdk'
-import { getStore } from '@netlify/blobs'
+import { createClient } from '@supabase/supabase-js'
 
 const client = new Anthropic({ apiKey: process.env.CLAUDE_API_KEY })
+
+function getSupabase() {
+  return createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY)
+}
 
 const SYSTEM_PROMPT = `You are the game-day assistant for a youth softball team (Minor 4 division).
 You help coaches manage the batting order and field assignments during games.
@@ -79,12 +83,11 @@ export default async function handler(req, context) {
     return Response.json({ error: 'Missing message' }, { status: 400 })
   }
 
-  // Pull roster + preferences from Blobs to give Claude team context
-  const store = getStore({ name: 'softball', consistency: 'strong' })
-  const rosterRaw = await store.get('roster', { type: 'text' }).catch(() => null)
-  const rosterData = rosterRaw ? JSON.parse(rosterRaw) : {}
-  const roster = rosterData.roster ?? []
-  const prefs = rosterData.preferences ?? {}
+  // Pull roster + preferences from Supabase to give Claude team context
+  const supabase = getSupabase()
+  const { data: rosterData } = await supabase.from('roster').select('roster, preferences').eq('id', 1).single()
+  const roster = rosterData?.roster ?? []
+  const prefs = rosterData?.preferences ?? {}
 
   const rosterContext = roster.length > 0
     ? `\n\nTeam roster (use these players for new plans): ${roster.join(', ')}`
@@ -133,27 +136,26 @@ export default async function handler(req, context) {
       })
     }
 
-    // If Claude returned an updated plan, persist it
+    // If Claude returned an updated plan, persist it to Supabase
     if (parsed.updatedPlan) {
-      const store = getStore({ name: 'softball', consistency: 'strong' })
       const plan = parsed.updatedPlan
       plan.version = (currentPlan?.version || 0) + 1
       plan.lastUpdated = new Date().toISOString()
       parsed.updatedPlan = plan
 
-      await store.setJSON(`plan-${plan.gameId}`, plan)
-      await store.setJSON('active-plan', plan)
+      // Clear current active flag
+      await supabase.from('plans').update({ is_active: false }).eq('is_active', true)
 
-      const raw = await store.get('plan-manifest', { type: 'text' })
-      const manifest = raw ? JSON.parse(raw) : []
-      const existing = manifest.findIndex((m) => m.id === plan.gameId)
-      const entry = { id: plan.gameId, title: plan.title, date: plan.date }
-      if (existing >= 0) {
-        manifest[existing] = entry
-      } else {
-        manifest.push(entry)
-      }
-      await store.setJSON('plan-manifest', manifest)
+      // Upsert this plan as active
+      await supabase.from('plans').upsert({
+        game_id: plan.gameId,
+        title: plan.title,
+        date: plan.date,
+        data: plan,
+        version: plan.version,
+        last_updated: plan.lastUpdated,
+        is_active: true,
+      })
     }
 
     return Response.json(parsed)

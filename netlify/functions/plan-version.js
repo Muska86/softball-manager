@@ -1,20 +1,27 @@
-import { getStore } from '@netlify/blobs'
+import { createClient } from '@supabase/supabase-js'
 
-export default async function handler(req, context) {
+function getSupabase() {
+  return createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY)
+}
+
+export default async function handler(req) {
   if (req.method !== 'GET') {
     return new Response('Method not allowed', { status: 405 })
   }
 
   try {
-    const store = getStore({ name: 'softball', consistency: 'strong' })
-    const raw = await store.get('active-plan', { type: 'text' })
+    const supabase = getSupabase()
+    const { data, error } = await supabase
+      .from('plans')
+      .select('version, last_updated')
+      .eq('is_active', true)
+      .single()
 
-    if (!raw) {
+    if (error || !data) {
       return Response.json({ version: 0, lastUpdated: null })
     }
 
-    const { version, lastUpdated } = JSON.parse(raw)
-    return Response.json({ version, lastUpdated })
+    return Response.json({ version: data.version, lastUpdated: data.last_updated })
   } catch (err) {
     console.error('plan-version error:', err)
     return Response.json({ error: 'Failed to check version' }, { status: 500 })

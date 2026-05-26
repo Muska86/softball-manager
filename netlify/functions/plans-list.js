@@ -1,22 +1,24 @@
-import { getStore } from '@netlify/blobs'
+import { createClient } from '@supabase/supabase-js'
 
-export default async function handler(req, context) {
+function getSupabase() {
+  return createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY)
+}
+
+export default async function handler(req) {
   if (req.method !== 'GET') {
     return new Response('Method not allowed', { status: 405 })
   }
 
   try {
-    const store = getStore({ name: 'softball', consistency: 'strong' })
-    const raw = await store.get('plan-manifest', { type: 'text' })
+    const supabase = getSupabase()
+    const { data, error } = await supabase
+      .from('plans')
+      .select('game_id, title, date')
+      .order('date', { ascending: false })
 
-    if (!raw) {
-      return Response.json([])
-    }
+    if (error) throw error
 
-    const manifest = JSON.parse(raw)
-    // Sort newest first
-    manifest.sort((a, b) => new Date(b.date) - new Date(a.date))
-
+    const manifest = (data || []).map((r) => ({ id: r.game_id, title: r.title, date: r.date }))
     return Response.json(manifest)
   } catch (err) {
     console.error('plans-list error:', err)
