@@ -15,6 +15,7 @@ League rules:
 - No player repeats the same position in consecutive innings
 - Pitching rotates across innings within the game (and across the season)
 - The bench player rotates too — no player should bench consecutively if avoidable
+- The player on the bench in inning N MUST be the pitcher in inning N+1 (e.g. if Blakely benches in inning 1, she pitches in inning 2)
 - The batting order lead-off rotates each game based on where the prior game ended
 
 The plan JSON schema is:
